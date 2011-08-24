@@ -1,0 +1,34 @@
+/**
+* Styles for Shift Scheduler Module
+**/
+
+#shift-scheduler {
+}
+
+#shift-scheduler .open-shift {
+  color:#F00;
+  font-weight:bold;
+}
+
+#shift-scheduler .closed-shift {
+  color:#0F0;
+}
+
+#shift-scheduler .taken-shift {
+  background-color:#254117;
+}
+
+#shift-scheduler table.body-table {
+}
+
+#shift-scheduler th {
+  vertical-align:top;
+}
+
+#shift-scheduler th.schedule-header {
+  vertical-align:top;
+}
+
+#shift-scheduler tr.schedule-display {
+  vertical-align:middle;
+}

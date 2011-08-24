@@ -1,0 +1,250 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *
+ * Install file for the coop_shift_scheduler module.
+ */
+
+function coop_shift_scheduler_schema() {
+  $schema['coop_shift_scheduler_committee'] = array(
+    'description' => 'Holds the data for a Committee',
+    'fields' => array(
+      'committee_id' => array(
+        'description' => 'An arbitrary unique identifier for each committee',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Display Name of the Committee',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'Describes the Committee',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'start_datetime' => array(
+        'description' => 'The start time for a Committee.',
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'not null' => TRUE,
+      ),
+      'end_datetime' => array(
+        'description' => 'The end time for a Committee.',
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('committee_id'),
+  );//closes schema array
+  $schema['coop_shift_scheduler_job'] = array(
+    'description' => 'Holds the data for a Job',
+    'fields' => array(
+      'job_id' => array(
+        'description' => 'An arbitrary unique identifier for each Job',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Display Name of the Job',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'Describes the Job',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'repeats' => array(
+        'description' => '0 - Does not Repeat, 1 - Repeats',
+        'size' => 'tiny',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'training' => array(
+        'description' => '0 - Does not Require Training, 1 - Requires Training',
+        'size' => 'tiny',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+    ),
+      'primary key' => array('job_id'),
+  );//closes schema array
+  $schema['coop_shift_scheduler_shift'] = array(
+    'description' => 'Holds the data for a Shift',
+    'fields' => array(
+      'shift_id' => array(
+        'description' => 'An arbitrary unique identifier for each Shift',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'description' => 'Describes the Shift',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'isAssigned' => array(
+        'description' => '0 - is not Assigned, 1 - is Assigned',
+        'size' => 'tiny',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'owner_user_id' => array(
+        'description' => 'The User assigned to the Shift',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'job_id' => array(
+        'description' => 'The Job to which this shift corresponds',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+    ),
+      'primary key' => array('shift_id'),
+  );//closes schema array
+  $schema['coop_shift_scheduler_slot'] = array(
+    'description' => 'Holds the data for a Slot',
+    'fields' => array(
+      'slot_id' => array(
+        'description' => 'An arbitrary unique identifier for each Slot',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+       'shift_id' => array(
+        'description' => 'The Shift to which this slot corresponds',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'start_datetime' => array(
+        'description' => 'The start time for a Slot.',
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'not null' => TRUE,
+      ),
+      'end_datetime' => array(
+        'description' => 'The end time for a Slot.',
+        'type' => 'datetime',
+        'mysql_type' => 'DATETIME',
+        'not null' => TRUE,
+      ),
+      'worker_user_id' => array(
+        'description' => 'The User who actually worked the slot',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'isWorked' => array(
+        'description' => '0 - Is not Worked, 1 - Is Worked',
+        'size' => 'tiny',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+    ),
+      'primary key' => array('slot_id'),
+  );//closes schema array
+  $schema['coop_shift_scheduler_slotAssignment'] = array(
+    'description' => 'Holds the data for a SlotAssignment',
+    'fields' => array(
+      'slot_assignment_id' => array(
+        'description' => 'An arbitrary unique identifier for each SlotAssignment',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+       'worker_user_id' => array(
+        'description' => 'The Shift to which this slot corresponds',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'slot_id' => array(
+        'description' => 'The User who actually worked the slot',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+    ),
+      'primary key' => array('slot_assignment_id'),
+  );//closes schema array
+  $schema['coop_shift_scheduler_userWorkStatus'] = array(
+   'description' => 'Holds the data for a Worker Status',
+    'fields' => array(
+      'user_worker_status_id' => array(
+        'description' => 'An arbitrary unique identifier for each Status',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+       'user_id' => array(
+        'description' => 'The Shift to which this slot corresponds',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => '0 - Is not Worked, 1 - Is Worked',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+    ),
+      'primary key' => array('user_worker_status_id'),
+  
+  );//closes schema array
+
+
+  return $schema;
+}
+
+//standard functions to create and destroy
+//the tables on install and uninstall
+//@TODO
+
+function coop_shift_scheduler_uninstall() {
+  //remove variables set by the shift scheduler
+  variable_del('coop_shift_scheduler_committee');
+  variable_del('coop_shift_scheduler_job');
+  variable_del('coop_shift_scheduler_shift');
+  variable_del('coop_shift_scheduler_slot');
+  variable_del('coop_shift_scheduler_slotAssignment');
+  variable_del('coop_shift_scheduler_userWorkStatus');
+}
+
+//upgrade function to implement hook_update_N
+function coop_shift_scheduler_update_7000() {
+  $ret = array();
+  db_add_field('coop_shift_scheduler_slots','slot_type', array(
+    'description' => '0 - Recurring, 1 - Event',
+    'size' => 'tiny',
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'initial' => 0				
+    ));
+  return $ret;
+}
