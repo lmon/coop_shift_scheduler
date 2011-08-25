@@ -70,14 +70,14 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
 
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/job/4
-    $job_id = arg(4);
-    if ($job_id) {   
-    $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $job_id));	
+    $object_id = arg(4);
+    if ($object_id) {   
+    $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
       foreach ($row_query as $row){
         // display the edit slot form
          $form[self::$keyname.'_id'] = array(
           '#type'            => 'value',
-          '#value'           => $job_id,
+          '#value'           => $object_id,
         );    
         $form['name'] = array(
           '#title'         => t(self::$keyname.' name'),
@@ -222,22 +222,22 @@ function admin_submit($form, $form_state) {
 				'repeats'   => $form_state['values']['repeats'],
 				)
 			 )
-			->condition('job_id', $form_state['values']['job_id'], '=')
+			->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 			->execute();
 	
 	   // update eligible roles
-     drupal_set_message(t('The job has been updated.'));
+     drupal_set_message(t('The '.self::$displayname.' has been updated.'));
 	   $form_state['redirect'] = array(self::$admin_full_url);
   }
   elseif ($form_state['values']['op'] == t('Delete '.self::$displayname)) {
   	db_delete(self::$tablename)
-		->condition('job_id', $form_state['values']['job_id'], '=')
+		->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 		->execute();
     //
     // TODO: cascade effects? 
     //
     $form_state['redirect'] = array(self::$admin_full_url);
-    drupal_set_message(t('The job and *TODO* all of its associated shifts have been deleted.'));
+    drupal_set_message(t('The '.self::$displayname.' and *TODO* all of its associated shifts have been deleted.'));
   }
   elseif ($form_state['values']['op'] == t('Add '.self::$displayname)) {
     $new_record = array(
@@ -251,7 +251,7 @@ function admin_submit($form, $form_state) {
     // 
     // TODO Cascade on Add???
     // 
-    drupal_set_message(t('The job has been added.'));
+    drupal_set_message(t('The '.self::$displayname.' has been added.'));
   }
 }
 

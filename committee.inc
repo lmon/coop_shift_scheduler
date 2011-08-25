@@ -13,7 +13,11 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
  * TODO - move utility functions into here
  */
  class Committee extends MyBaseObject{
-
+    public static $keyname = "committee";
+    public static $displayname = "Committee";
+    public static $tablename = "coop_shift_scheduler_committee";
+    public static $admin_full_url = "admin/settings/coop_shift_scheduler/committee";
+    
     public function __construct()
     {
       parent::__construct();
@@ -32,14 +36,11 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           ),
         );       
 
-      $result = db_query("SELECT committee_id, name, start_datetime, end_datetime FROM {coop_shift_scheduler_committee} ORDER BY name");
+      $result = db_query("SELECT ".self::$keyname."_id, name, start_datetime, end_datetime FROM {".self::$tablename."} ORDER BY name");
         foreach ($result as $row){
-          if ($row->name ==0){
-            $edit_default_committee = l(t('edit default committee'), 'admin/settings/coop_shift_scheduler/default_committee/' . $row->committee_id);
-          } 
           $rows[] = array(
             $row->name,
-            l(t('edit committee'), 'admin/settings/coop_shift_scheduler/committee/' . $row->committee_id),
+            l(t('edit '.self::$keyname), self::$admin_full_url ."/". $row->committee_id),
           );
         }
         
@@ -69,17 +70,17 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
 
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/committee/4
-    $committee_id = arg(4);
-    if ($committee_id) {   
-    $row_query = db_query("SELECT * FROM {coop_shift_scheduler_committee} WHERE committee_id = :committeeid", array(':committeeid' => $committee_id));	
+    $object_id = arg(4);
+    if ($object_id) {   
+    $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
       foreach ($row_query as $row){
         // display the edit slot form
-         $form['committee_id'] = array(
+         $form[self::$keyname.'_id'] = array(
           '#type'            => 'value',
-          '#value'           => $committee_id,
+          '#value'           => $object_id,
         );    
         $form['name'] = array(
-          '#title'         => t('committee name'),
+          '#title'         => t(self::$displayname.' name'),
           '#type'          => 'textfield',
           '#size'          => 32,
           '#maxlength'     => 64,
@@ -112,24 +113,24 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     $form['actions'] = array('#type' => 'actions');
       $form['actions']['submit'] = array(
         '#type'            => 'submit',
-        '#value'           => t('Save committee'),
+        '#value'           => t('Save '.self::$displayname),
       );
       $form['actions']['delete'] = array(
         '#type'            => 'submit',
-        '#value'           => t('Delete committee'),
+        '#value'           => t('Delete '.self::$displayname),
       );
     }
     // If you aren't editing a particular slot, assume we're creating a new one
     else {
       $form['name'] = array(
-        '#title'           => 'Committee Name',
+        '#title'           => self::$displayname.' Name',
         '#type'            => 'textfield',
         '#size'            => 52,
         '#maxlength'       => 64,
       );
 
       $form['description'] = array(
-        '#title'           => 'Committee Description',
+        '#title'           => self::$displayname.' Description',
         '#type'            => 'textfield',
         '#size'            => 52,
         '#maxlength'       => 128,
@@ -143,7 +144,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     $form['actions'] = array('#type' => 'actions');
       $form['actions']['submit'] = array(
         '#type'            => 'submit',
-        '#value'           => t('Add Committee'),
+        '#value'           => t('Add '.self::$displayname),
       );
     }
 
@@ -159,15 +160,15 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
  * @ingroup forms
  * @ingroup admin
 **/
-function admin_validate($form, $form_state){
+function admin_validate($form, &$form_state){
   if ($form_state['values']['name']) {
     // Edit slot
-    if ($form_state['values']['op'] == t('Save Committee')) {
+    if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
       // check for duplicate names
-      if (db_query("SELECT * FROM {coop_shift_scheduler_committee} WHERE name = :name AND committee_id <> :committeeid", array(
+      if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name AND ".self::$keyname."_id <> :".self::$keyname."id", array(
 	':name' => $form_state['values']['name'], 
-	':committeeid' => $form_state['values']['committee_id']))->rowCount() > 0) {
-        form_set_error('name', t('The committee name %name already exists. Please choose another committee name.', array('%name' => $form_state['values']['name'])));
+	':'.self::$keyname.'id' => $form_state['values'][self::$keyname.'_id']))->rowCount() > 0) {
+        form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
       }
      
       // validate description?? 
@@ -180,13 +181,13 @@ function admin_validate($form, $form_state){
     // Add slot
     if ($form_state['values']['op'] == t('Add Committee')) {
       // check that there isn't already a slot with that name 
-      if (db_query("SELECT * FROM {coop_shift_scheduler_committee} WHERE name = :name", array(':name' => $form_state['values']['name']))->rowCount() > 0) {
-        form_set_error('name', t('The committee name %name already exists. Please choose another committee name.', array('%name' => $form_state['values']['name'])));
+      if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->rowCount() > 0) {
+        form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
       }
     }
   }
   else {
-    form_set_error('name', t('You must specify a valid Committee name.'));
+    form_set_error('name', t('You must specify a valid '.self::$displayname.'name.'));
   }
 }
 
@@ -199,7 +200,7 @@ function admin_validate($form, $form_state){
  *
  * @ingroup admin
  */
-function admin_submit($form, $form_state) {
+function admin_submit($form, &$form_state) {
 
     //
     // TODO need to put the various field form values into one string
@@ -208,9 +209,9 @@ function admin_submit($form, $form_state) {
       $end = '2008-12-30 00:00:00';
       $start = '2008-12-31 00:00:00'; 
     
-    if ($form_state['values']['op'] == t('Save committee')) {
+    if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
   
-  	db_update('coop_shift_scheduler_committee')
+  	db_update(self::$tablename)
 			->fields(array(
 				'name'=> $form_state['values']['name'],
 				'description'=> $form_state['values']['description'],
@@ -218,36 +219,36 @@ function admin_submit($form, $form_state) {
 				'end_datetime'   => $end,
 				)
 			 )
-			->condition('committee_id', $form_state['values']['committee_id'], '=')
+			->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 			->execute();
 	
 	   // update eligible roles
-     drupal_set_message(t('The committee has been updated.'));
-	   $form_state['redirect'] = array('admin/settings/coop_shift_scheduler/committee');
+     drupal_set_message(t('The '.self::$displayname.' has been updated.'));
+	   $form_state['redirect'] = array(self::$admin_full_url);
   }
-  elseif ($form_state['values']['op'] == t('Delete committee')) {
-  	db_delete('coop_shift_scheduler_committee')
-		->condition('committee_id', $form_state['values']['committee_id'], '=')
+  elseif ($form_state['values']['op'] == t('Delete '.self::$displayname)) {
+  	db_delete(self::$tablename)
+		->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 		->execute();
     //
     // TODO: cascade effects? 
     //
-    $form_state['redirect'] = array('admin/settings/coop_shift_scheduler/committee');
-    drupal_set_message(t('The committee and *TODO* all of its associated shifts have been deleted.'));
+    $form_state['redirect'] = array(self::$admin_full_url);
+    drupal_set_message(t('The '.self::$displayname.' and *TODO* all of its associated shifts have been deleted.'));
   }
-  elseif ($form_state['values']['op'] == t('Add Committee')) {
+  elseif ($form_state['values']['op'] == t('Add '.self::$displayname)) {
     $new_record = array(
 				'name'=> $form_state['values']['name'],
 				'description'   => $form_state['values']['description'],
 				'start_datetime'   => $start,
 				'end_datetime'   => $end,
     );
-    drupal_write_record('coop_shift_scheduler_committee', $new_record);
-    $slot_id = db_query("SELECT committee_id FROM {coop_shift_scheduler_committee} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
+    drupal_write_record(self::$tablename, $new_record);
+    $slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
     // 
     // TODO Cascade on Add???
     // 
-    drupal_set_message(t('The committee has been added.'));
+    drupal_set_message(t('The '.self::$displayname.' has been added.'));
   }
 }
 
