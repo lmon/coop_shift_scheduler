@@ -194,39 +194,9 @@ function coop_shift_scheduler_schedule() {
   return _coop_shift_scheduler_wrap_content($page_content);
 }
 
-/**
- * Form builder for creating new days on the shift schedule.
- *
- * @see coop_shift_scheduler_create_days_form_validate()
- * @see coop_shift_scheduler_create_days_form_submit()
- *
- * @ingroup forms
- */
-function coop_shift_scheduler_create_days_form($form_state) {
-//  $form = array();
-  $form['start_date'] = array(
-    '#type'        => 'date',
-    '#title'       => t('Start date'),
-    '#required'    => TRUE,
-    '#description' => t('The first date to be created on the shift schedule.'),
-  );
-  $form['end_date'] = array(
-    '#type'        => 'date',
-    '#title'       => t('End date'),
-    '#required'    => TRUE,
-    '#description' => t('The last date to be created on the shift schedule.'),
-  );
-  $form['actions'] = array('#type' => 'actions');
-  $form['actions']['submit'] = array(
-    '#type'        => 'submit',
-    '#value'       => t('Add days'),
-  );
-  $form['#submit'][] = 'coop_shift_scheduler_create_days_form_submit';
-  return $form;
-}
 
 /***** NEW COOP SHIFT SCHEDULER FUNCTIONS ****/
- 
+/* Committee */
 /**
  *
  * Define the apperance of the admin_committee page.
@@ -262,10 +232,9 @@ function coop_shift_scheduler_admin_committee_form() {
  * @ingroup forms
  * @ingroup admin
 **/
-function coop_shift_scheduler_admin_committee_validate($form, &$form_state){
-  Committee::admin_validate();
+function coop_shift_scheduler_admin_committee_validate($form, $form_state){
+  Committee::admin_validate($form, $form_state);
 }
-
 /**
  * Form submission handler for coop_shift_scheduler_admin_committee_form()
  *
@@ -275,95 +244,76 @@ function coop_shift_scheduler_admin_committee_validate($form, &$form_state){
  *
  * @ingroup admin
  */
-function coop_shift_scheduler_admin_committee_submit($form, &$form_state) {
-
-    //
-    // TODO need to put the various field form values into one string
-    //
-    //default values
-      $end = '2008-12-30 00:00:00';
-      $start = '2008-12-31 00:00:00'; 
-    
-    if ($form_state['values']['op'] == t('Save committee')) {
-  
-  	db_update('coop_shift_scheduler_committee')
-			->fields(array(
-				'name'=> $form_state['values']['name'],
-				'description'=> $form_state['values']['description'],
-				'start_datetime'   => $start,
-				'end_datetime'   => $end,
-				)
-			 )
-			->condition('committee_id', $form_state['values']['committee_id'], '=')
-			->execute();
-	
-	   // update eligible roles
-     drupal_set_message(t('The committee has been updated.'));
-	   $form_state['redirect'] = array('admin/settings/coop_shift_scheduler');
-  }
-  elseif ($form_state['values']['op'] == t('Delete committee')) {
-  	db_delete('coop_shift_scheduler_committee')
-		->condition('committee_id', $form_state['values']['committee_id'], '=')
-		->execute();
-    //
-    // TODO: cascade effects? 
-    //
-    $form_state['redirect'] = array('admin/settings/coop_shift_scheduler/committee');
-    drupal_set_message(t('The committee and *TODO* all of its associated shifts have been deleted.'));
-  }
-  elseif ($form_state['values']['op'] == t('Add Committee')) {
-    $new_record = array(
-				'name'=> $form_state['values']['name'],
-				'description'   => $form_state['values']['description'],
-				'start_datetime'   => $start,
-				'end_datetime'   => $end,
-    );
-    drupal_write_record('coop_shift_scheduler_committee', $new_record);
-    $slot_id = db_query("SELECT committee_id FROM {coop_shift_scheduler_committee} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
-    // 
-    // TODO Cascade on Add???
-    // 
-    drupal_set_message(t('The committee has been added.'));
-  }
-}
-
-
-function coop_shift_scheduler_admin_home(){
-}
-/**
-* Your form builder.
-*/
-function mymodule_form($form_state) {
-  $form = array();
-
-  // [...snip...] add many fields to your form
-
-  // Creating the date/time element starts here
-
-  // Provide a default date in the format YYYY-MM-DD HH:MM:SS.
-  $date = '2008-12-31 00:00:00';
-
-  // Provide a format using regular PHP format parts (see documentation on php.net).
-  // If you're using a date_select, the format will control the order of the date parts in the selector,
-  // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-  $format = 'Y-m-d H:i';
-
-  $form['date2'] = array(
-     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-     '#title' => 'select a date',
-     '#default_value' => $date,
-     '#date_format' => $format,
-     '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-     '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
-     '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-     '#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
-  );
-
-  // [...snip...] more fields, including the 'submit' button.
-
+function coop_shift_scheduler_admin_committee_submit($form, $form_state) {
+	$form = Committee::admin_submit($form, $form_state);
   return $form;
 }
 
+/* Job */
+/**
+ *
+ * Define the apperance of the admin_committee page.
+ * If a committee_id is specified in url (e.g. admin/settings/coop_shift_scheduler/committee/4),
+ * this basically just renders coop_shift_scheduler_admin_committee_form. Otherwise
+ * it shows a table of all the defined committee with links to perform admin tasks
+ * specifically for each slot.
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_job() {
+	$output = Job::admin();
+  return $output;
+}
+/**
+ * Form builder for changing ommittee roles.
+ *
+ * @see coop_shift_scheduler_admin_ommittee_validate()
+ * @see coop_shift_scheduler_admin_ommittee_submit()
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_job_form() {
+	$form = Job::admin_form();
+  return $form;
+}
+/**
+ * Validate Committe Add/Edit form
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+**/
+function coop_shift_scheduler_admin_job_validate($form, $form_state){
+  Job::admin_validate($form, $form_state);
+}
+/**
+ * Form submission handler for coop_shift_scheduler_admin_committee_form()
+ *
+ * @see coop_shift_scheduler_admin_committee_form()
+ * @see coop_shift_scheduler_admin_committee_validate()
+ *
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_job_submit($form, $form_state) {
+	$form = Job::admin_submit($form, $form_state);
+  return $form;
+}
+
+
+/**
+ * Display Home Page for Shift Scheduler Admin
+ *
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_home(){
+  $content = "in coop_shift_scheduler_admin_home";
+  return $content;
+}
+ 
 /***** END - NEW COOP SHIFT SCHEDULER FUNCTIONS ****/
 
 
@@ -389,69 +339,26 @@ function coop_shift_scheduler_menu() {
     'access arguments' => array('access coop shift schedule'),
     'type'             => MENU_NORMAL_ITEM,
   );
-  $items['coop_shift_scheduler/add_days'] = array(
-    'title'            => 'Add days',
-    'page callback'    => 'coop_shift_scheduler_add_days',
-    'access arguments' => array('add to coop shift schedule'),
-    'type'             => MENU_NORMAL_ITEM,
-  );
-  $items['coop_shift_scheduler/change_shift'] = array(
-    'title'            => 'Change coop shift',
-    'page callback'    => 'coop_shift_scheduler_change_shift',
-    'access arguments' => array('edit coop shift schedule'),
-    'type'             => MENU_CALLBACK,
-  );
-  $items['coop_shift_scheduler/old_shifts'] = array(
-    'title'            => 'Old shifts',
-    'page callback'    => 'coop_shift_scheduler_old_shifts',
-    'access arguments' => array('access coop shift schedule'),
-    'type'             => MENU_NORMAL_ITEM,
-  );
-  $items['coop_shift_scheduler/old_shifts_results'] = array(
-    'title'            => 'Old shifts',
-    'page callback'    => 'coop_shift_scheduler_old_shifts_results',
-    'access arguments' => array('access coop shift schedule'),
-    'type'             => MENU_CALLBACK,
-  );
-  $items['coop_shift_scheduler/create_event_shifts'] = array(
-    'title'            => 'Create Shifts for Events',
-    'page callback'    => 'coop_shift_scheduler_create_event_shifts',
-    'access arguments' => array('add to coop shift schedule'),
-    'type'             => MENU_NORMAL_ITEM,
-  );
 
-  /* */
+  /* ADMIN GROUP */
   $items['admin/settings/coop_shift_scheduler/committee'] = array(
     'title'            => 'Edit coop Shift Scheduler committees',
     'page callback'    => 'coop_shift_scheduler_admin_committee',
     'access arguments' => array('administer coop_shift_scheduler'),
     'type'             => MENU_NORMAL_ITEM,
   );
-/* */  
-/* */
   $items['admin/settings/coop_shift_scheduler/job'] = array(
-    'title'            => '1Edit coop Shift Scheduler Jobs',
-    'page callback'    => 'coop_shift_scheduler_admin_jobs',
+    'title'            => 'Edit coop Shift Scheduler Jobs',
+    'page callback'    => 'coop_shift_scheduler_admin_job',
     'access arguments' => array('administer coop_shift_scheduler'),
     'type'             => MENU_NORMAL_ITEM,
   );
-/* */ 
-/* */
   $items['admin/settings/coop_shift_scheduler/shift'] = array(
     'title'            => 'Edit coop Shift Scheduler Shift',
-    'page callback'    => 'coop_shift_scheduler_admin_shifts',
+    'page callback'    => 'coop_shift_scheduler_admin_shift',
     'access arguments' => array('administer coop_shift_scheduler'),
     'type'             => MENU_NORMAL_ITEM,
   );
-/*  
-  $items['admin/settings/coop_shift_scheduler/slot'] = array(
-    'title'            => 'Edit coop Shift Scheduler slots',
-    'page callback'    => 'coop_shift_scheduler_admin_slots',
-    'access arguments' => array('administer coop_shift_scheduler'),
-    'type'             => MENU_NORMAL_ITEM,
-  );
-  */ 
-/* */ 
   $items['admin/settings/coop_shift_scheduler/shiftAssignment'] = array(
     'title'            => 'Edit coop Shift Scheduler shiftAssignment',
     'page callback'    => 'coop_shift_scheduler_admin_shiftAssignment',
@@ -474,12 +381,7 @@ function coop_shift_scheduler_menu() {
     'access arguments' => array('administer coop_shift_scheduler'),
     'type'             => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/coop_shift_scheduler/default_shifts'] = array(
-    'title'            => 'Edit default shifts',
-    'page callback'    => 'coop_shift_scheduler_admin_default_shifts',
-    'access arguments' => array('administer coop_shift_scheduler'),
-    'type'             => MENU_CALLBACK,
-  );
+
   return $items;
 }
 
