@@ -2,3 +2,6 @@ name = "Coop Shift scheduler"
 description = "A module to handle scheduling Coop Members in shifts"
 core = 7.x
 configure = admin/settings/coop_shift_scheduler/configure
+files[] = committee.inc
+project = "Coop Shift scheduler"
+
