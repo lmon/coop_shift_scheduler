@@ -1,5 +1,4 @@
 ﻿<?php
-/*core*/
 require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
 
 /**
@@ -70,11 +69,15 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
 
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/committee/4
-    $slot_id = arg(4);
-    if ($slot_id) {   
-    $row_query = db_query("SELECT * FROM {coop_shift_scheduler_committee} WHERE committee_id = :slotid", array(':slotid' => $slot_id));	
+    $committee_id = arg(4);
+    if ($committee_id) {   
+    $row_query = db_query("SELECT * FROM {coop_shift_scheduler_committee} WHERE committee_id = :committeeid", array(':committeeid' => $committee_id));	
       foreach ($row_query as $row){
         // display the edit slot form
+         $form['committee_id'] = array(
+          '#type'            => 'value',
+          '#value'           => $committee_id,
+        );    
         $form['name'] = array(
           '#title'         => t('committee name'),
           '#type'          => 'textfield',
@@ -82,10 +85,20 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#maxlength'     => 64,
           '#default_value' => $row->name,
         );
-        $form['status'] = array(
+        $form['description'] = array(
           '#type'          => 'textfield',
           '#title'         => t('Description'),
           '#default_value' => $row->description,
+        );
+        $form['start_datetime'] = array(
+          '#type'          => 'textfield',
+          '#title'         => t('start_datetime'),
+          '#default_value' => $row->start_datetime,
+        );
+        $form['end_datetime'] = array(
+          '#type'          => 'textfield',
+          '#title'         => t('start_datetime'),
+          '#default_value' => $row->start_datetime,
         );
         
         $instructions = t('La la La la La la La la ');
@@ -99,11 +112,11 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     $form['actions'] = array('#type' => 'actions');
       $form['actions']['submit'] = array(
         '#type'            => 'submit',
-        '#value'           => t('Save slot'),
+        '#value'           => t('Save committee'),
       );
       $form['actions']['delete'] = array(
         '#type'            => 'submit',
-        '#value'           => t('Delete slot'),
+        '#value'           => t('Delete committee'),
       );
     }
     // If you aren't editing a particular slot, assume we're creating a new one
@@ -146,7 +159,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
  * @ingroup forms
  * @ingroup admin
 **/
-function admin_validate($form, &$form_state){
+function admin_validate($form, $form_state){
   if ($form_state['values']['name']) {
     // Edit slot
     if ($form_state['values']['op'] == t('Save Committee')) {
@@ -186,7 +199,7 @@ function admin_validate($form, &$form_state){
  *
  * @ingroup admin
  */
-function admin_submit($form, &$form_state) {
+function admin_submit($form, $form_state) {
 
     //
     // TODO need to put the various field form values into one string
@@ -210,7 +223,7 @@ function admin_submit($form, &$form_state) {
 	
 	   // update eligible roles
      drupal_set_message(t('The committee has been updated.'));
-	   $form_state['redirect'] = array('admin/settings/coop_shift_scheduler');
+	   $form_state['redirect'] = array('admin/settings/coop_shift_scheduler/committee');
   }
   elseif ($form_state['values']['op'] == t('Delete committee')) {
   	db_delete('coop_shift_scheduler_committee')
