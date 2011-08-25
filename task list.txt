@@ -1,0 +1,12 @@
+﻿shift_scheduler_task list
+
+add / edit / delete
+  committee
+  Job
+  Shift
+  Slot
+  SlotAssignment
+  userWorkStatus
+  
+ view 
+ 
