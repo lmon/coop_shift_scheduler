@@ -6,7 +6,7 @@
  * The coop_shift_scheduler module.
  */
 
- require_once ( dirname(__FILE__) . '/committee.inc');
+// require_once ( dirname(__FILE__) . '/committee.inc');
  
 /**
  * Implements hook_help().
@@ -302,6 +302,58 @@ function coop_shift_scheduler_admin_job_submit($form, $form_state) {
   return $form;
 }
 
+/* Shift */
+/**
+ *
+ * Define the apperance of the admin_shift page.
+ * If a committee_id is specified in url (e.g. admin/settings/coop_shift_scheduler/shift/4),
+ * this basically just renders coop_shift_scheduler_admin_shift_form. Otherwise
+ * it shows a table of all the defined shift with links to perform admin tasks
+ * specifically for each slot.
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shift() {
+	$output = Shift::admin();
+  return $output;
+}
+/**
+ * Form builder for editing shifts
+ *
+ * @see coop_shift_scheduler_admin_shift_validate()
+ * @see coop_shift_scheduler_admin_shift_submit()
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shift_form() {
+	$form = Shift::admin_form();
+  return $form;
+}
+/**
+ * Validate Shift Add/Edit form
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+**/
+function coop_shift_scheduler_admin_shift_validate($form, $form_state){
+  Shift::admin_validate($form, $form_state);
+}
+/**
+ * Form submission handler for coop_shift_scheduler_admin_shift_form()
+ *
+ * @see coop_shift_scheduler_admin_shift_form()
+ * @see coop_shift_scheduler_admin_shift_validate()
+ *
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shift_submit($form, $form_state) {
+	$form = Shift::admin_submit($form, $form_state);
+  return $form;
+}
 
 /**
  * Display Home Page for Shift Scheduler Admin

@@ -51,8 +51,8 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           $output .= theme('table', array('header' => $header, 'rows' => $rows));
         }
       }
-      $form = drupal_get_form('coop_shift_scheduler_admin_committee_form');//returns array
-      $output .= drupal_render($form);
+      $form = self::get_form( array(get_class(),'admin') );
+      $output .= self::render($form); 
       return $output;
     }
 
@@ -179,7 +179,7 @@ function admin_validate($form, &$form_state){
       
     }
     // Add slot
-    if ($form_state['values']['op'] == t('Add Committee')) {
+    if ($form_state['values']['op'] == t('Add '.self::$displayname)) {
       // check that there isn't already a slot with that name 
       if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->rowCount() > 0) {
         form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
@@ -223,7 +223,8 @@ function admin_submit($form, &$form_state) {
 			->execute();
 	
 	   // update eligible roles
-     drupal_set_message(t('The '.self::$displayname.' has been updated.'));
+     self::set_message(t('The '.self::$displayname.' has been updated.'));
+     //drupal_set_message(t('The '.self::$displayname.' has been updated.'));
 	   $form_state['redirect'] = array(self::$admin_full_url);
   }
   elseif ($form_state['values']['op'] == t('Delete '.self::$displayname)) {
@@ -234,7 +235,8 @@ function admin_submit($form, &$form_state) {
     // TODO: cascade effects? 
     //
     $form_state['redirect'] = array(self::$admin_full_url);
-    drupal_set_message(t('The '.self::$displayname.' and *TODO* all of its associated shifts have been deleted.'));
+    self::set_message(t('The '.self::$displayname.' and *TODO* all of its associated shifts have been deleted.'));
+    //drupal_set_message(t('The '.self::$displayname.' and *TODO* all of its associated shifts have been deleted.'));
   }
   elseif ($form_state['values']['op'] == t('Add '.self::$displayname)) {
     $new_record = array(
@@ -243,12 +245,14 @@ function admin_submit($form, &$form_state) {
 				'start_datetime'   => $start,
 				'end_datetime'   => $end,
     );
-    drupal_write_record(self::$tablename, $new_record);
+    self::write(self::$tablename, $new_record);
+    //drupal_write_record(self::$tablename, $new_record);
     $slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
     // 
     // TODO Cascade on Add???
     // 
-    drupal_set_message(t('The '.self::$displayname.' has been added.'));
+    self::set_message(t('The '.self::$displayname.' has been added.'));
+    //drupal_set_message(t('The '.self::$displayname.' has been added.'));
   }
 }
 

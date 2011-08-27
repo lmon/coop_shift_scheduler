@@ -4,6 +4,7 @@ core = 7.x
 configure = admin/settings/coop_shift_scheduler/configure
 files[] = committee.inc
 files[] = job.inc
+files[] = shift.inc
 files[] = MyBaseObject.inc
 project = "Coop Shift Scheduler"
 

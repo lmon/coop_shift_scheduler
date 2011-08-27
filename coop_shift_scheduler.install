@@ -95,6 +95,14 @@ function coop_shift_scheduler_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      /* added 8/27 */
+      'name' => array(
+        'description' => 'Name of Shift',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
       'description' => array(
         'description' => 'Describes the Shift',
         'type' => 'varchar',
