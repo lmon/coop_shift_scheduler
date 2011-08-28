@@ -355,6 +355,59 @@ function coop_shift_scheduler_admin_shift_submit($form, $form_state) {
   return $form;
 }
 
+/* ShiftAssignment */
+/**
+ *
+ * Define the apperance of the admin_shiftassignment page.
+ * If a committee_id is specified in url (e.g. admin/settings/coop_shift_scheduler/shiftassignment/4),
+ * this basically just renders coop_shift_scheduler_admin_shiftassignment_form. Otherwise
+ * it shows a table of all the defined shift with links to perform admin tasks
+ * specifically for each slot.
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shiftassignment() {
+	$output = ShiftAssignment::admin();
+  return $output;
+}
+/**
+ * Form builder for editing shifts
+ *
+ * @see coop_shift_scheduler_admin_shiftassignment_validate()
+ * @see coop_shift_scheduler_admin_shiftassignment_submit()
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shiftassignment_form() {
+	$form = ShiftAssignment::admin_form();
+  return $form;
+}
+/**
+ * Validate Shift Add/Edit form
+ *
+ *
+ * @ingroup forms
+ * @ingroup admin
+**/
+function coop_shift_scheduler_admin_shiftassignment_validate($form, $form_state){
+  ShiftAssignment::admin_validate($form, $form_state);
+}
+/**
+ * Form submission handler for coop_shift_scheduler_admin_shiftassignment_form()
+ *
+ * @see coop_shift_scheduler_admin_shiftassignment_form()
+ * @see coop_shift_scheduler_admin_shiftassignment_validate()
+ *
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_shiftassignment_submit($form, $form_state) {
+	$form = ShiftAssignment::admin_submit($form, $form_state);
+  return $form;
+}
+
 /**
  * Display Home Page for Shift Scheduler Admin
  *
@@ -449,7 +502,7 @@ function coop_shift_scheduler_menu() {
 }
 
 /**
-  *@group Utilities
+  * @group Utilities
 **/
 
 /**
@@ -461,20 +514,20 @@ function coop_shift_scheduler_menu() {
  */
 function _util_form_date($element_name, $title, $default_date, $date_format){
  // Provide a default date in the format YYYY-MM-DD HH:MM:SS.
-    $date = '2008-12-31 00:00:00';
+    $date = '2011-08-09 12:34:56';
     if(isset($default_date)){ 
       $date = $default_date;
     }
   // Provide a format using regular PHP format parts (see documentation on php.net).
   // If you're using a date_select, the format will control the order of the date parts in the selector,
   // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
-    $format = 'Y-m-d H';
+    $format = 'Y-m-d h:i A';
     if(isset($date_format)){ 
       $format = $date_format;
     }
 
   return array(
-     '#type' => 'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+     '#type' => 'date_popup', //'date_select', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
      '#title' => $title,
      '#default_value' => $date,
      '#date_format' => $format,

@@ -70,6 +70,11 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
 
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/committee/4
+    
+    //the default date value
+    $date = '2011-08-09 00:00:00';
+    $format = 'Y-m-d h:i A';
+
     $object_id = arg(4);
     if ($object_id) {   
     $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
@@ -91,7 +96,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('Description'),
           '#default_value' => $row->description,
         );
-        $form['start_datetime'] = array(
+/*        $form['start_datetime'] = array(
           '#type'          => 'textfield',
           '#title'         => t('start_datetime'),
           '#default_value' => $row->start_datetime,
@@ -101,6 +106,9 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('start_datetime'),
           '#default_value' => $row->start_datetime,
         );
+*/
+    $form['start_datetime'] = _util_form_date('start_datetime', 'Committee Start Time', $row->start_datetime, $format);
+    $form['end_datetime'] = _util_form_date('end_datetime', 'Committee End Time', $row->end_datetime, $format);
         
         $instructions = t('La la La la La la La la ');
         $form['instructions'] = array(
@@ -136,11 +144,9 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         '#maxlength'       => 128,
       );
    
-    $date = '2008-12-31 00:00:00';
-    $format = 'Y-m-d H';
     $form['start_datetime'] = _util_form_date('start_datetime', 'Committee Start Time', $date, $format);
     $form['end_datetime'] = _util_form_date('end_datetime', 'Committee End Time', $date, $format);
-    
+     
     $form['actions'] = array('#type' => 'actions');
       $form['actions']['submit'] = array(
         '#type'            => 'submit',
@@ -171,14 +177,16 @@ function admin_validate($form, &$form_state){
         form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
       }
      
-      // validate description?? 
+      //TODO validate description?? 
 
-      // validate start date 
+      //TODO validate start date 
 
-      // validate end date 
+      //TODO validate end date 
+      
+      //TODO validate start is less than end date ?
       
     }
-    // Add slot
+    // Add Item
     if ($form_state['values']['op'] == t('Add '.self::$displayname)) {
       // check that there isn't already a slot with that name 
       if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->rowCount() > 0) {
@@ -206,8 +214,16 @@ function admin_submit($form, &$form_state) {
     // TODO need to put the various field form values into one string
     //
     //default values
-      $end = '2008-12-30 00:00:00';
-      $start = '2008-12-31 00:00:00'; 
+    $end = '2008-12-30 00:00:00';
+    $start = '2008-12-31 00:00:00'; 
+    if(isset($form_state['values']['start_datetime'])){
+      $start = $form_state['values']['start_datetime'];
+    }
+    if(isset($form_state['values']['end_datetime'])){
+      $end = $form_state['values']['end_datetime'];
+    }
+//    print "using start $start <br>";
+//    print "using end $end ";
     
     if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
   
@@ -246,13 +262,10 @@ function admin_submit($form, &$form_state) {
 				'end_datetime'   => $end,
     );
     self::write(self::$tablename, $new_record);
-    //drupal_write_record(self::$tablename, $new_record);
-    $slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
     // 
     // TODO Cascade on Add???
     // 
     self::set_message(t('The '.self::$displayname.' has been added.'));
-    //drupal_set_message(t('The '.self::$displayname.' has been added.'));
   }
 }
 
