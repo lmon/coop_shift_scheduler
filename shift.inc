@@ -36,10 +36,11 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           ),
         );       
 
-      $result = db_query("SELECT ".self::$keyname."_id, name, description, isAssigned FROM {".self::$tablename."} ORDER BY name");
+      $result = db_query("SELECT ".self::$keyname."_id, name, job_id, description, isAssigned FROM {".self::$tablename."} ORDER BY name");
         foreach ($result as $row){
+          $list = self::get_job_records($row->job_id);
           $rows[] = array(
-            $row->name,
+            $row->name. ' (Shift for \''. $list[$row->job_id] .'\')',
             l(t('edit '.self::$keyname), self::$admin_full_url ."/". $row->shift_id),
           );
         }
@@ -68,16 +69,17 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
  */
   function admin_form() {
 
+    // job ids
+    $job_id_options = parent::get_job_records();
+    // user ids
+    $owner_id_options = parent::get_user_records();
+
+
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/shift/4
     $object_id = arg(4);
     if ($object_id) {   
-    $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
-    
-    //$job_id_options_result = db_query("SELECT * FROM {job} WHERE sssr.slot_id = :sssrslotid ORDER BY u.name", array(':sssrslotid' => $shift_slot_id));
-    foreach($options_result as $options_row){
-      $options[$options_row->uid] = $options_row->name;
-    }
+      $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
     
       foreach ($row_query as $row){
         // display the edit slot form
@@ -95,24 +97,29 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('Description'),
           '#default_value' => $row->description,
         );
+        print $row->isassigned;
         $form['isAssigned'] = array(
           '#title'         => t('Is the Shift assigned'),
           '#type'          => 'radios',
-          '#default_value' =>  1,
+          '#default_value' =>  $row->isassigned,
           '#options'       => array(
-            t('Yes'),
             t('No'),
+            t('Yes'),
             ),
         );
         $form['owner_user_id'] = array(
-          '#type'          => 'textfield',
-          '#title'         => t('owner_user_id'),
+          '#type'          => 'select',
+          '#title'         => t('Owner User Id'),
           '#default_value' => $row->owner_user_id,
+          '#options'       => $owner_id_options,
+
         );
+
         $form['job_id'] = array(
-          '#type'          => 'textfield',
-          '#title'         => t('job_id'),
+          '#type'          => 'select',
+          '#title'         => t('Job'),
           '#default_value' => $row->job_id,
+          '#options'       => $job_id_options,
         );   
          
       }
@@ -151,14 +158,16 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
             ),
       );
       $form['owner_user_id'] = array(
-        '#type'          => 'textfield',
-        '#title'         => t('owner_user_id'),
+        '#type'          => 'select',
+        '#title'         => t('Owner Name'),
         '#default_value' => '',
+        '#options'       => $owner_id_options,
       );
       $form['job_id'] = array(
-        '#type'          => 'textfield',
-        '#title'         => t('job_id'),
-        '#default_value' => '',
+        '#type'          => 'select',
+          '#title'         => t('Job Name'),
+          '#default_value' => '',
+          '#options'       => $job_id_options,
       );   
      
       $form['actions'] = array('#type' => 'actions');
@@ -265,12 +274,13 @@ function admin_submit($form, &$form_state) {
     $new_record = array(
 				'name'=> $form_state['values']['name'],
 				'description'   => $form_state['values']['description'],
-				'start_datetime'   => $start,
-				'end_datetime'   => $end,
+				'isAssigned'   => $form_state['values']['isAssigned'],
+				'owner_user_id'   => $form_state['values']['owner_user_id'],
+        'job_id'  =>    $form_state['values']['job_id']
     );
     self::write(self::$tablename, $new_record);
     //drupal_write_record(self::$tablename, $new_record);
-    $slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
+    //$slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
     // 
     // TODO Cascade on Add???
     // 

@@ -178,7 +178,7 @@ function coop_shift_scheduler_schema() {
   $schema['coop_shift_scheduler_slotAssignment'] = array(
     'description' => 'Holds the data for a SlotAssignment',
     'fields' => array(
-      'slot_assignment_id' => array(
+      'slotassignment_id' => array(
         'description' => 'An arbitrary unique identifier for each SlotAssignment',
         'type' => 'serial',
         'unsigned' => TRUE,
@@ -197,7 +197,7 @@ function coop_shift_scheduler_schema() {
         'not null' => TRUE,
       ),
     ),
-      'primary key' => array('slot_assignment_id'),
+      'primary key' => array('slotassignment_id'),
   );//closes schema array
   $schema['coop_shift_scheduler_userWorkStatus'] = array(
    'description' => 'Holds the data for a Worker Status',

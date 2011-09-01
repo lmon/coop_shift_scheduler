@@ -18,6 +18,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     public static $tablename = "coop_shift_scheduler_committee";
     public static $admin_full_url = "admin/settings/coop_shift_scheduler/committee";
     
+    
     public function __construct()
     {
       parent::__construct();
@@ -36,7 +37,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           ),
         );       
 
-      $result = db_query("SELECT ".self::$keyname."_id, name, start_datetime, end_datetime FROM {".self::$tablename."} ORDER BY name");
+      $result = db_query("SELECT ".self::$keyname."_id, name FROM {".self::$tablename."} ORDER BY name");
         foreach ($result as $row){
           $rows[] = array(
             $row->name,
@@ -96,17 +97,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('Description'),
           '#default_value' => $row->description,
         );
-/*        $form['start_datetime'] = array(
-          '#type'          => 'textfield',
-          '#title'         => t('start_datetime'),
-          '#default_value' => $row->start_datetime,
-        );
-        $form['end_datetime'] = array(
-          '#type'          => 'textfield',
-          '#title'         => t('start_datetime'),
-          '#default_value' => $row->start_datetime,
-        );
-*/
+ 
     $form['start_datetime'] = _util_form_date('start_datetime', 'Committee Start Time', $row->start_datetime, $format);
     $form['end_datetime'] = _util_form_date('end_datetime', 'Committee End Time', $row->end_datetime, $format);
         
@@ -222,8 +213,7 @@ function admin_submit($form, &$form_state) {
     if(isset($form_state['values']['end_datetime'])){
       $end = $form_state['values']['end_datetime'];
     }
-//    print "using start $start <br>";
-//    print "using end $end ";
+ 
     
     if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
   
