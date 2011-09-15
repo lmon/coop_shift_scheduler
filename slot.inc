@@ -36,7 +36,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           ),
         );       
       $result = db_query("SELECT ".self::$keyname."_id, shift_id, start_datetime, end_datetime FROM {".self::$tablename."} ORDER BY slot_id");
-        foreach ($result as $row){
+         while ($row = db_fetch_object($result)) {
           $list = self::get_shift_records($row->shift_id);
           $rows[] = array(
             'Slot for \''. $list[$row->shift_id] .'\' on ('.$row->start_datetime.' '.$row->end_datetime.')',
@@ -46,13 +46,13 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         
         if($rows != NULL){
           $form['table'] = array(
-          '#value' => theme('table', array('header' => $header, 'rows' => $rows))
+          '#value' => theme('table', $header, $rows)
           );
-          $output .= theme('table', array('header' => $header, 'rows' => $rows));
+          $output .= theme('table', $header, $rows);
         }
       }
       $form = self::get_form( array(get_class(),'admin') );
-      $output .= self::render($form); 
+      $output .= $form; 
       return $output;
     }
 
@@ -81,15 +81,20 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/slot/4
     $object_id = arg(4);
     if ($object_id) {   
-      $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
+      $row = db_fetch_object(db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = %d", $object_id));	
     
-      foreach ($row_query as $row){
+        $instructions = t('La la La la La la La la ');
+        $form['instructions'] = array(
+          '#type'        => 'item',
+          '#title'       => t('Instructions'),
+          '#description' => $instructions,
+        );
         // display the edit slot form
          $form[self::$keyname.'_id'] = array(
           '#type'            => 'value',
           '#value'           => $object_id,
-        );    
-        //'slot_id' , 'shift_id', 'start_datetime', 'end_datetime', 'worker_user_id' , 'isWorked' ,
+        );      
+        
         $form['shift_id'] = array(
           '#type'          => 'select',
           '#title'         => t('Shift'),
@@ -106,25 +111,22 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#options'       => $worker_id_options,
 
         );
+        
         $form['isWorked'] = array(
           '#title'         => t('Is the Slot worked'),
           '#type'          => 'radios',
-          '#default_value' =>  $row->isworked,
+          '#default_value' =>  $row->isWorked,
           '#options'       => array(
             t('No'),
             t('Yes'),
             ),
-        );
-  
-         
-      }
+        ); 
       
-    $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+      $form['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Save '.self::$displayname),
       );
-      $form['actions']['delete'] = array(
+      $form['delete'] = array(
         '#type'            => 'submit',
         '#value'           => t('Delete '.self::$displayname),
       );
@@ -132,22 +134,31 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     // If you aren't editing a particular slot, assume we're creating a new one
     else {
         
-        //'slot_id' , 'shift_id', 'start_datetime', 'end_datetime', 'worker_user_id' , 'isWorked' ,
-        $form['shift_id'] = array(
-          '#type'          => 'textfield',
-          '#title'         => t('Name'),
-          '#default_value' => "",
+        $instructions = t('La la La la La la La la ');
+        $form['instructions'] = array(
+          '#type'        => 'item',
+          '#title'       => t('Instructions'),
+          '#description' => $instructions,
         );
-        $form['start_datetime'] = _util_form_date('start_datetime', 'Slot Start Time', $date, $format);
-        $form['end_datetime'] = _util_form_date('end_datetime', 'Slot End Time', $date, $format);
-    
+        
+        $form['shift_id'] = array(
+          '#type'          => 'select',
+          '#title'         => t('Job'),
+          '#default_value' => "",
+          '#options'       => $shift_id_options,
+          '#description' => 'Choose the job this is for',
+        ); 
          $form['worker_user_id'] = array(
           '#type'          => 'select',
           '#title'         => t('Worker User Id'),
           '#default_value' => "",
           '#options'       => $worker_id_options,
-
+          '#description' => 'pick the person that is working this slot',
         );
+        $form['start_datetime'] = _util_form_date('start_datetime', 'Slot Start Time', $date, $format);
+        $form['end_datetime'] = _util_form_date('end_datetime', 'Slot End Time', $date, $format);
+    
+        
         $form['isWorked'] = array(
           '#title'         => t('Is the Slot worked'),
           '#type'          => 'radios',
@@ -157,21 +168,15 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
             t('Yes'),
             ),
         );
-        $form['shift_id'] = array(
-          '#type'          => 'select',
-          '#title'         => t('Job'),
-          '#default_value' => "",
-          '#options'       => $shift_id_options,
-        );  
-      $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+ 
+       
+      $form['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Add '.self::$displayname),
       );
     }
-
-    $form['#submit'][] = 'coop_shift_scheduler_admin_slot_submit';
-    $form['#validate'][] = 'coop_shift_scheduler_admin_slot_validate';
+    $form['#submit'][] = 'coop_shift_scheduler_admin_'.self::$keyname.'_submit';
+    $form['#validate'][] = 'coop_shift_scheduler_admin_'.self::$keyname.'_validate';
     return $form;
   }
 
@@ -231,7 +236,18 @@ function admin_submit($form, &$form_state) {
     
     if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
   
-  	db_update(self::$tablename)
+  	 db_query("UPDATE {".self::$tablename."} 
+       SET shift_id = '%d', start_datetime = '%s', end_datetime = '%s', isWorked = '%d', worker_user_id = %d 
+       WHERE ".self::$keyname."_id = %d", 
+       $form_state['values']['shift_id'], 
+       $form_state['values']['start_datetime'], 
+       $form_state['values']['end_datetime'], 
+       $form_state['values']['isWorked'], 
+       $form_state['values']['worker_user_id'], 
+       $form_state['values'][self::$keyname.'_id']);
+     
+    /*
+     db_update(self::$tablename)
 			->fields(array(
 				'shift_id'  =>    $form_state['values']['shift_id'],
         'start_datetime'   => $start,
@@ -242,17 +258,15 @@ function admin_submit($form, &$form_state) {
 			 )
 			->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 			->execute();
-	
+    */
 	   // update eligible roles
      self::set_message(t('The '.self::$displayname.' has been updated.'));
      //drupal_set_message(t('The '.self::$displayname.' has been updated.'));
 	   $form_state['redirect'] = array(self::$admin_full_url);
   }
   elseif ($form_state['values']['op'] == t('Delete '.self::$displayname)) {
-  	db_delete(self::$tablename)
-		->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
-		->execute();
-    //
+     db_query('DELETE FROM {'.self::$tablename.'} WHERE '.self::$keyname.'_id = %d', $form_state['values'][self::$keyname.'_id']);
+     //
     // TODO: cascade effects? 
     //
     $form_state['redirect'] = array(self::$admin_full_url);

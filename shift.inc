@@ -37,7 +37,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         );       
 
       $result = db_query("SELECT ".self::$keyname."_id, name, job_id, description, isAssigned FROM {".self::$tablename."} ORDER BY name");
-        foreach ($result as $row){
+        while ($row = db_fetch_object($result)) {
           $list = self::get_job_records($row->job_id);
           $rows[] = array(
             $row->name. ' (Shift for \''. $list[$row->job_id] .'\')',
@@ -47,13 +47,13 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         
         if($rows != NULL){
           $form['table'] = array(
-          '#value' => theme('table', array('header' => $header, 'rows' => $rows))
+          '#value' => theme('table', $header, $rows)
           );
-          $output .= theme('table', array('header' => $header, 'rows' => $rows));
+          $output .= theme('table', $header, $rows);
         }
       }
       $form = self::get_form( array(get_class(),'admin') );
-      $output .= self::render($form); 
+      $output .= $form; 
       return $output;
     }
 
@@ -68,20 +68,24 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
  * @ingroup admin
  */
   function admin_form() {
-
     // job ids
     $job_id_options = parent::get_job_records();
     // user ids
     $owner_id_options = parent::get_user_records();
 
-
     // Takes the 5th argument on the drupal path.
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/shift/4
     $object_id = arg(4);
     if ($object_id) {   
-      $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
+      $row = db_fetch_object(db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = %d", $object_id ));	
     
-      foreach ($row_query as $row){
+        $instructions = t('La la La la La la La la ');
+        $form['instructions'] = array(
+          '#type'        => 'item',
+          '#title'       => t('Instructions'),
+          '#description' => $instructions,
+        );
+
         // display the edit slot form
          $form[self::$keyname.'_id'] = array(
           '#type'            => 'value',
@@ -97,11 +101,10 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('Description'),
           '#default_value' => $row->description,
         );
-        print $row->isassigned;
         $form['isAssigned'] = array(
           '#title'         => t('Is the Shift assigned'),
           '#type'          => 'radios',
-          '#default_value' =>  $row->isassigned,
+          '#default_value' =>  $row->isAssigned,
           '#options'       => array(
             t('No'),
             t('Yes'),
@@ -112,7 +115,6 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#title'         => t('Owner User Id'),
           '#default_value' => $row->owner_user_id,
           '#options'       => $owner_id_options,
-
         );
 
         $form['job_id'] = array(
@@ -121,22 +123,27 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#default_value' => $row->job_id,
           '#options'       => $job_id_options,
         );   
-         
-      }
-      
-    $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+
+        $form['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Save '.self::$displayname),
-      );
-      $form['actions']['delete'] = array(
-        '#type'            => 'submit',
-        '#value'           => t('Delete '.self::$displayname),
-      );
+        );
+
+        $form['delete'] = array(
+          '#type'            => 'submit',
+          '#value'           => t('Delete '.self::$displayname),
+        );
     }
     // If you aren't editing a particular slot, assume we're creating a new one
     else {
-      $form['name'] = array(
+        $instructions = t('La la La la La la La la ');
+        $form['instructions'] = array(
+          '#type'        => 'item',
+          '#title'       => t('Instructions'),
+          '#description' => $instructions,
+        );
+
+        $form['name'] = array(
         '#title'           => self::$displayname.' Name',
         '#type'            => 'textfield',
         '#size'            => 52,
@@ -170,15 +177,14 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
           '#options'       => $job_id_options,
       );   
      
-      $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+       $form['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Add '.self::$displayname),
       );
     }
 
-    $form['#submit'][] = 'coop_shift_scheduler_admin_shift_submit';
-    $form['#validate'][] = 'coop_shift_scheduler_admin_shift_validate';
+    $form['#submit'][] = 'coop_shift_scheduler_admin_'.self::$keyname.'_submit';
+    $form['#validate'][] = 'coop_shift_scheduler_admin_'.self::$keyname.'_validate';
     return $form;
   }
 
@@ -194,9 +200,7 @@ function admin_validate($form, &$form_state){
     // Edit slot
     if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
       // check for duplicate names
-      if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name AND ".self::$keyname."_id <> :".self::$keyname."id", array(
-	':name' => $form_state['values']['name'], 
-	':'.self::$keyname.'id' => $form_state['values'][self::$keyname.'_id']))->rowCount() > 0) {
+      if (db_result(db_query("SELECT COUNT(*) FROM {".self::$tablename."} WHERE name = '%s' AND ".self::$keyname."_id <> %d", $form_state['values']['name'], 	$form_state['values'][self::$keyname.'_id']) )) {
         form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
       }
      
@@ -212,7 +216,7 @@ function admin_validate($form, &$form_state){
     // Add slot
     if ($form_state['values']['op'] == t('Add '.self::$displayname)) {
       // check that there isn't already a slot with that name 
-      if (db_query("SELECT * FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->rowCount() > 0) {
+      if (db_result(db_query("SELECT COUNT(*) FROM {".self::$tablename."} WHERE name = '%s'", $form_state['values']['name']))) {
         form_set_error('name', t('The '.self::$displayname.' name %name already exists. Please choose another name.', array('%name' => $form_state['values']['name'])));
       }
     }
@@ -241,8 +245,9 @@ function admin_submit($form, &$form_state) {
       $start = '2008-12-31 00:00:00'; 
     
     if ($form_state['values']['op'] == t('Save '.self::$displayname)) {
-  
-  	db_update(self::$tablename)
+ db_query("UPDATE {".self::$tablename."} SET name = '%s', description = '%s', isAssigned = '%s', owner_user_id = '%s', job_id = %d WHERE ".self::$keyname."_id = %d", $form_state['values']['name'], $form_state['values']['description'], $form_state['values']['isAssigned'], $form_state['values']['owner_user_id'], $form_state['values']['job_id'], $form_state['values'][self::$keyname.'_id']);
+     
+/*  	db_update(self::$tablename)
 			->fields(array(
 				'name'=> $form_state['values']['name'],
 				'description'=> $form_state['values']['description'],
@@ -253,17 +258,15 @@ function admin_submit($form, &$form_state) {
 			 )
 			->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
 			->execute();
-	
+*/	
 	   // update eligible roles
      self::set_message(t('The '.self::$displayname.' '.$form_state['values']['name'].' has been updated.'));
      //drupal_set_message(t('The '.self::$displayname.' has been updated.'));
 	   $form_state['redirect'] = array(self::$admin_full_url);
   }
   elseif ($form_state['values']['op'] == t('Delete '.self::$displayname)) {
-  	db_delete(self::$tablename)
-		->condition(self::$keyname.'_id', $form_state['values'][self::$keyname.'_id'], '=')
-		->execute();
-    //
+    db_query('DELETE FROM {'.self::$tablename.'} WHERE '.self::$keyname.'_id = %d', $form_state['values'][self::$keyname.'_id']);
+     //
     // TODO: cascade effects? 
     //
     $form_state['redirect'] = array(self::$admin_full_url);
@@ -279,8 +282,7 @@ function admin_submit($form, &$form_state) {
         'job_id'  =>    $form_state['values']['job_id']
     );
     self::write(self::$tablename, $new_record);
-    //drupal_write_record(self::$tablename, $new_record);
-    //$slot_id = db_query("SELECT ".self::$keyname."_id FROM {".self::$tablename."} WHERE name = :name", array(':name' => $form_state['values']['name']))->fetchField();
+
     // 
     // TODO Cascade on Add???
     // 

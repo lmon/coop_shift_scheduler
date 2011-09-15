@@ -37,7 +37,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         );       
 
       $result = db_query("SELECT ".self::$keyname."_id, slot_id worker_user_id FROM {".self::$tablename."} ORDER BY ".self::$keyname."_id");
-        foreach ($result as $row){
+         while ($row = db_fetch_object($result)) {
           $rows[] = array(
             "Id:".$row->slotassignment_id."/slot ".$row->slot_id."/worker ".$row->worker_user_id,
             l(t('edit '.self::$keyname), self::$admin_full_url ."/". $row->slotassignment_id),
@@ -46,13 +46,13 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         
         if($rows != NULL){
           $form['table'] = array(
-          '#value' => theme('table', array('header' => $header, 'rows' => $rows))
+          '#value' => theme('table', $header, $rows)
           );
-          $output .= theme('table', array('header' => $header, 'rows' => $rows));
+          $output .= theme('table', $header, $rows);
         }
       }
       $form = self::get_form( array(get_class(),'admin') );
-      $output .= self::render($form); 
+      $output .= $form; 
       return $output;
     }
 
@@ -70,7 +70,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     // job ids
     $full_slot_list = parent::get_fullslot_records();
     foreach($full_slot_list as $row){
-      $slot_id_options[] =  $row->shiftname ;
+      $slot_id_options[] =  $row->shiftname ."( "._util_pretty_date($row->start_datetime)." until "._util_pretty_date($row->end_datetime)." )" ;
     }
 
     // user ids
@@ -80,14 +80,20 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
     // e.g. takes 4 from admin/settings/coop_shift_scheduler/slotAssignment/4
     $object_id = arg(4);
     if ($object_id) {   
-      $row_query = db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = :".self::$keyname."id", array(':'.self::$keyname.'id' => $object_id));	
+      $row = db_fetch_object(db_query("SELECT * FROM {".self::$tablename."} WHERE ".self::$keyname."_id = ".$object_id));	
     
-      foreach ($row_query as $row){
-        // display the edit slot form
-         $form[self::$keyname.'_id'] = array(
+      $instructions = t('La la La la La la La la ');
+        $form['instructions'] = array(
+          '#type'        => 'item',
+          '#title'       => t('Instructions'),
+          '#description' => $instructions,
+      );
+        
+      // display the edit slot form
+      $form[self::$keyname.'_id'] = array(
           '#type'            => 'value',
           '#value'           => $object_id,
-        );    
+      );    
       $form['slot_id'] = array(
         '#title'           => 'Slot Name',
         '#type'            => 'select',
@@ -99,16 +105,13 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         '#title'         => t('Worker Name'),
         '#default_value' => $row->worker_user_id,
         '#options'       => $worker_id_options,
-      );
-         
-      }
+      ); 
       
-    $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+      $form['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Save '.self::$displayname),
       );
-      $form['actions']['delete'] = array(
+      $form['delete'] = array(
         '#type'            => 'submit',
         '#value'           => t('Delete '.self::$displayname),
       );
@@ -130,8 +133,7 @@ require_once ( dirname(__FILE__) . '/MyBaseObject.inc');
         '#options'       => $worker_id_options,
       );
       
-      $form['actions'] = array('#type' => 'actions');
-      $form['actions']['submit'] = array(
+      $form ['submit'] = array(
         '#type'            => 'submit',
         '#value'           => t('Add '.self::$displayname),
       );

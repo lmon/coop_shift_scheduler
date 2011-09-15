@@ -1,12 +1,9 @@
 name = "Coop Shift scheduler"
 description = "A module to handle scheduling Coop Members in shifts"
-core = 7.x
-configure = admin/settings/coop_shift_scheduler/configure
-files[] = committee.inc
-files[] = job.inc
-files[] = shift.inc 
-files[] = slot.inc
-files[] = slotassignment.inc
-files[] = MyBaseObject.inc
-project = "Coop Shift Scheduler"
+core = 6.x
+dependencies[] = date
 
+configure = admin/settings/coop_shift_scheduler/configure
+ 
+project = "Coop Shift Scheduler"
+version = "6.22"

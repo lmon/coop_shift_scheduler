@@ -6,7 +6,11 @@
  * The coop_shift_scheduler module.
  */
 
-// require_once ( dirname(__FILE__) . '/committee.inc');
+ require_once ( dirname(__FILE__) . '/committee.inc');
+ require_once ( dirname(__FILE__) . '/shift.inc');
+ require_once ( dirname(__FILE__) . '/slot.inc');
+ require_once ( dirname(__FILE__) . '/job.inc');
+ require_once ( dirname(__FILE__) . '/slotassignment.inc');
  
 /**
  * Implements hook_help().
@@ -64,13 +68,59 @@ function _coop_shift_scheduler_wrap_content($content) {
   return '<div id="shift-scheduler">' . $content . '</div>';
 }
 
+
 /**
- * Format the display of the shift schedule.
- * Only used as a callback in coop_shift_scheduler_menu().
+ * Form builder for displaying the shift schedule between the start and end
+ * dates, inclusive.
  *
- * @see coop_shift_scheduler_menu()
+ * @see coop_shift_scheduler_old_schedule_form_validate()
+ * @see coop_shift_scheduler_old_schedule_form_submit()
  *
- * @todo use drupal calls to make the table
+ * @ingroup forms
+ */
+function coop_shift_scheduler_old_schedule_form() {
+  // Read dates from the url.
+  if (isset($_GET['sday']) && isset($_GET['smon']) && isset($_GET['syear'])) {
+    $start_date = array(
+      'year'  => $_GET['syear'],
+      'day'   => $_GET['sday'],
+      'month' => $_GET['smon'],
+    );
+  }else {$start_date = NULL;}
+  if (isset($_GET['eday']) && isset($_GET['emon']) && isset($_GET['eyear'])) {
+    $end_date = array(
+      'year'  => $_GET['eyear'],
+      'day'   => $_GET['eday'],
+      'month' => $_GET['emon'],
+    );
+  }else {$end_date = NULL;}
+
+  $form = array();
+  $form['start_date'] = array(
+    '#type'          => 'date',
+    '#required'      => TRUE,
+    '#description'   => t('Select a start date to see an old shift schedule.'),
+    '#default_value' => $start_date,
+  );
+  $form['end_date'] = array(
+    '#type'          => 'date',
+    '#required'      => TRUE,
+    '#description'   => t('Select an end date to see an old shift schedule.'),
+    '#default_value' => $end_date,
+  );
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
+    '#type'  => 'submit',
+    '#value' => t('See old schedule'),
+  );
+  $form['#submit'][] = 'coop_shift_scheduler_old_schedule_form_submit';
+  $form['#validate'][] = 'coop_shift_scheduler_old_schedule_form_validate';
+  return $form;
+}
+
+
+/**
+ * TEMP FUNCTION. TO BE REMOVED AFTER RDEBUGGING
  */
 function coop_shift_scheduler_schedule() {
   $page_content = '';
@@ -523,7 +573,7 @@ function coop_shift_scheduler_admin_home(){
 //TODO
 $content = <<<HERE
 <h3>Coop Shift scheduler administration pages</h3>
-<ul><li class="first"><a href="/?q=admin/settings/coop_shift_scheduler/committee">Edit coop Shift Scheduler committees</a></li>
+<ul><li class="first"><a href="/?q=admin/settings/coop_shift_scheduler/committee/">Edit coop Shift Scheduler committees</a></li>
 <li><a href="/?q=admin/settings/coop_shift_scheduler/job">Edit coop Shift Scheduler Jobs</a></li>
 <li><a href="/?q=admin/settings/coop_shift_scheduler/shift">Edit coop Shift Scheduler Shift</a></li>
 <li><a href="/?q=admin/settings/coop_shift_scheduler/slot">Edit coop Shift Scheduler Slot</a></li>
@@ -532,10 +582,83 @@ $content = <<<HERE
 <li><a href="/?q=admin/settings/coop_shift_scheduler/configure">Configure coop Shift Scheduler</a></li>
 <li class="last"><a href="/?q=admin/people/permissions#module-coop_shift_scheduler">Configure Coop Shift scheduler permissions</a></li></ul>
 HERE;
-
   return $content;
 }
+
+/**
+ * Populate Some Tables.
+ * @TODO: provide a full set of data that makes sense
+ * @TODO: add a role to the Users: 'member'
+ *
+ * @ingroup admin
+ */
+function coop_shift_scheduler_admin_seed(){
+
+    //shift
+    /*
+    $tablename = 'coop_shift_scheduler_shift';
+    for($i=0;$i<10;$i++){
+      $list = array();
+      $list['values'] = array(
+        'name'=>'Test Job '.$i, 
+        'description'=>'Lorem ipsum '.$i, 
+        'isAssigned'=>'0', 
+        'owner_user_id'=>'1', 
+        'job_id'=>'1', 
+      );
+      $new_record = array(
+          'name'=> $list['values']['name'],
+          'description'   => $list['values']['description'],
+          'isAssigned'   => $list['values']['isAssigned'],
+          'owner_user_id'   => $list['values']['owner_user_id'],
+          'job_id'  =>    $list['values']['job_id']
+      );
+      
+      Shift::write($tablename, $new_record);
+    }
+    */
+
+    //worker-user
+    // get last entry in user table
+    $result = db_query("SELECT MAX(uid) as uid FROM {users} ");
+    while ($row = db_fetch_object($result)) {
+        $maxuid = ($row->uid +1);
+    }
+
+    for($i=$maxuid;$i<($maxuid+5);$i++){
+      $list = array();
+      //create some new users
+      $list['values'] = array(
+        'name'=>'Test User '.$i, 
+        'pass'=>'abc'.$i, 
+        'mail'=>'user'.$i.'@test.com', 
+      );
+      $new_record = array(
+          'name'=> $list['values']['name'],
+          'pass'   => $list['values']['pass'],
+          'mail'   => $list['values']['mail'],
+      );
+      Shift::write('users', $new_record);
+      
+      // get the last inserted id from users
+      $result = db_query("SELECT MAX(uid) as uid FROM {users} ");
+       while ($row = db_fetch_object($result)) {
+        $uid = $row->uid;
+      }
+      // update users_roles to make them an active coop member
+      $new_record = array(
+          'uid'=> $uid,
+          'rid'   => Shift::get_role_id(),
+      );
+      Shift::write('users_roles', $new_record);   
+     } 
+    
+    return "Tables have been seeded";
+}
  
+function coop_shift_scheduler_configure(){
+  return "This is the configure function";
+}
 /***** END - NEW COOP SHIFT SCHEDULER FUNCTIONS ****/
 
 
@@ -607,6 +730,13 @@ function coop_shift_scheduler_menu() {
     'page callback'    => 'coop_shift_scheduler_admin_home',
     'type'             => MENU_NORMAL_ITEM,
   );
+  $items['admin/settings/coop_shift_scheduler/seed-tables'] = array(
+    'title'            => 'Seed Tables with Data',
+    'description'      => 'Add Shifts & ...',
+    'access arguments' => array( 'administer coop_shift_scheduler'),
+    'page callback'    => 'coop_shift_scheduler_admin_seed',
+    'type'             => MENU_NORMAL_ITEM,
+  );
 
   
   $items['admin/settings/coop_shift_scheduler/configure'] = array(
@@ -649,10 +779,19 @@ function _util_form_date($element_name, $title, $default_date, $date_format){
      '#title' => $title,
      '#default_value' => $date,
      '#date_format' => $format,
-     '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-     //'#date_timezone' => 'America/New York', // Optional, if your date has a timezone other than the site timezone.
-     '#date_increment' => 30, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
-     '#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
   );
 
-}
+ 
+  }
+  /**
+ * A shorter display of dates.
+ *
+ * PHP date_parse: 
+ * @ingroup utilities
+ */
+ function _util_pretty_date($datestr){
+    $parts = date_parse($datestr);
+    return $parts[month] .'/'. $parts[day] .'/'. substr($parts[year], 2,2) 
+      .' '. '@'. $parts[hour] .':'. (($parts[minute]<10)?"0":"" ).$parts[minute] . (($parts[hour]>11)? "PM": "AM") ;
+  }
+
