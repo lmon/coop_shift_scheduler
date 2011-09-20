@@ -570,19 +570,17 @@ function coop_shift_scheduler_admin_shiftassignment_submit($form, $form_state) {
  * @ingroup admin
  */
 function coop_shift_scheduler_admin_home(){
-//TODO
-$content = <<<HERE
-<h3>Coop Shift scheduler administration pages</h3>
-<ul><li class="first"><a href="/?q=admin/settings/coop_shift_scheduler/committee/">Edit coop Shift Scheduler committees</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler/job">Edit coop Shift Scheduler Jobs</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler/shift">Edit coop Shift Scheduler Shift</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler/slot">Edit coop Shift Scheduler Slot</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler/slotAssignment">Edit coop Shift Scheduler SlotAssignment</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler">coop Shift Scheduler</a></li>
-<li><a href="/?q=admin/settings/coop_shift_scheduler/configure">Configure coop Shift Scheduler</a></li>
-<li class="last"><a href="/?q=admin/people/permissions#module-coop_shift_scheduler">Configure Coop Shift scheduler permissions</a></li></ul>
-HERE;
-  return $content;
+  $prefix = 'admin/settings/coop_shift_scheduler/';
+  $content = '<h3>Coop Shift scheduler administration pages</h3>';
+  return $content . theme_item_list(array(
+    l('Edit Committees', $prefix . 'committee'),
+    l('Edit Jobs', $prefix . 'job'),
+    l('Edit Shifts', $prefix . 'shift'),
+    l('Edit Slots', $prefix . 'slot'),
+    l('Edit Slot Assignments', $prefix . 'slotAssignment'),
+    l('Configure Shift Scheduler', $prefix . 'coop_shift_scheduler'),
+    l('Configure Permissions', $prefix . 'permissions#module-coop_shift_scheduler'),
+  ));
 }
 
 /**
